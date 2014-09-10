@@ -6,6 +6,7 @@ var
 
     server = express.createServer(),
     io = require('socket.io').listen(server),
+    fs = require('fs'),
     chat = io.of('/chat'),
     canvas = io.of('/canvas')
 ;
@@ -20,7 +21,13 @@ server.get(/(^\/.*$)/, function(request, response) {
     var fileName = request.params[0];
     if (fileName == '/')
         fileName = '/index.html';
-    response.sendfile(__dirname + '/client' + fileName);
+    console.log("request index file",fileName);
+
+    fs.readFile(__dirname + '/client/'+fileName,
+        function (err, data) {
+            response.writeHead(200);
+            response.end(data);
+        });
 });
 
 io.sockets.on('connection', function(socket) {

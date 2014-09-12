@@ -219,67 +219,16 @@ function initBrushModel(properties) {
 }
 
 function initChatModel() {
-    var
-        name,
-        messages = [
-            {
-                sender:'Server',
-                message:'Welcome to Whiteboard, a shared drawing surface ' +
-                    'supporting multiple simultaneous users. Tip: For ' +
-                    'shape/image tools, hold Shift to snap to a fixed angle ' +
-                    'or aspect-ratio.'
-            }
-        ],
-        messageAddCallbacks = []
-        ;
-
-    function getMessages() {
-        return messages;
-    }
-
+    var name;
     function getName() {
         return name;
     }
-
     function setName(newName) {
         name = newName;
     }
-
-    function receive(sender, message) {
-        messages.push({
-            sender:sender,
-            message:message
-        });
-        for (
-            var
-                funcNo = -1,
-                numFuncs = messageAddCallbacks.length
-            ;
-            ++funcNo < numFuncs;
-            )
-            messageAddCallbacks[funcNo]();
-    }
-
-    function send(message) {
-        if (name) {
-            receive(name, message);
-            chatServer.send(message);
-        }
-    }
-
-    function onadd(callback) {
-        messageAddCallbacks.push(callback);
-    }
-
-    chatServer.onreceive(receive);
-
     return {
         getName:getName,
-        setName:setName,
-        getMessages:getMessages,
-        receive:receive,
-        send:send,
-        onadd:onadd
+        setName:setName
     }
 }
 
@@ -509,17 +458,11 @@ function initBrushController() {
 
 function initChatController() {
     var
-        history,
-        input,
-        button,
         signInDialog,
         nameInput
         ;
 
     function initUi() {
-        history = $('#chatHistory');
-        input = $('#chatText');
-        button = $('#chatSubmit');
         signInDialog = $('#signInDialog');
         nameInput = $('#name');
 
@@ -538,44 +481,11 @@ function initChatController() {
             if (event.which == 13)
                 signIn()
         });
-
-        function sendMessage() {
-            chat.send(input.val());
-            input.val('');
-            input.focus();
-        }
-
-        button.button();
-        button.click(sendMessage);
-
-        input.keydown(function(event) {
-            if (event.which == 13)
-                sendMessage()
-        });
     }
-
-    function updateUi() {
-        var messages = chat.getMessages();
-        if (messages && messages.length) {
-            var message = messages[messages.length - 1];
-            if (message.sender == 'Server') {
-                history.prepend('<li class="system"><p>' + message.message +
-                    '</p></li>');
-            } else {
-                history.prepend('<li><h2>' + message.sender + '</h2><p>' +
-                    message.message + '</p></li>');
-            }
-        }
-    }
-
-    chat.onadd(updateUi);
 
     $(document).ready(initUi);
-    $(document).ready(updateUi);
-
     return {
-        initUi:initUi,
-        updateUi:updateUi
+        initUi:initUi
     };
 }
 
@@ -1126,9 +1036,6 @@ function initCursorController() {
         });
     }
 
-    function updateUi() {
-    }
-
     cursorServer.onmove(function (name, position) {
         var cursor = cursors[name];
         if (!position && cursor) {
@@ -1167,10 +1074,7 @@ function initCursorController() {
     });
 
     $(document).ready(initUi);
-    $(document).ready(updateUi);
-
     return {
-        initUi:initUi,
-        updateUi:updateUi
+        initUi:initUi
     }
 }

@@ -76,8 +76,8 @@ io.on('connection', function(socket) {
         })*/
         socket.broadcast.emit('receive', {
             sender:'Server',
-            message:name + ' has left.'
+            message:"server" + ' has left.'
         });
-        socket.broadcast.emit('removeCursor', name);
+        socket.broadcast.emit('removeCursor', "server");
     });
 });

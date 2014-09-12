@@ -1,37 +1,35 @@
-var
-    port = +process.argv[2] || 8080,
-
+var express = require('express'),
+    http = require('http'),
     sanitizer = require('validator').sanitize,
-    express = require('express'),
+    sio= require('socket.io'),
+    fs=require('fs'),
+    app = express();
 
-    server = express.createServer(),
-    io = require('socket.io').listen(server),
-    fs = require('fs'),
-    chat = io.of('/chat'),
-    canvas = io.of('/canvas')
-;
+// Load site handler
+require( __dirname +'/controllers/handler.js')(app);
+//Load public static resources like css and images
+app.use(express.static( __dirname +'/public'));
 
+//Define template engine. We will use ejs for templates.
+app.engine('.html', require('ejs').__express);
+app.set('views', __dirname + '/views');
+app.set('view engine', 'html');
+
+// Start the server
+var server=app.listen(3000, function () {
+    console.log("Express server listening on port %d",3000);
+});
+app.io=io=sio.listen(server);
+var chat = io.of('/chat');
+var canvas = io.of('/canvas');
 function sanitize(string) {
     return sanitizer(string).entityDecode()
 }
 
-server.listen(port);
-
-server.get(/(^\/.*$)/, function(request, response) {
-    var fileName = request.params[0];
-    if (fileName == '/')
-        fileName = '/index.html';
-    console.log("request index file",fileName);
-
-    fs.readFile(__dirname + '/client/'+fileName,
-        function (err, data) {
-            response.writeHead(200);
-            response.end(data);
-        });
-});
-
-io.sockets.on('connection', function(socket) {
+io.on('connection', function(socket) {
+    console.log("socket connected ",socket);
     socket.on('setName', function (name) {
+        console.log("setname recieved",message);
         name = sanitize(name);
         socket.set('name', name);
         socket.broadcast.emit('receive', {
@@ -41,6 +39,7 @@ io.sockets.on('connection', function(socket) {
     });
 
     socket.on('send', function (message) {
+        console.log("send recieved",message);
         socket.get('name', function(error, name) {
             if (name)
                 socket.broadcast.emit('receive', {
@@ -55,17 +54,18 @@ io.sockets.on('connection', function(socket) {
     });
 
     socket.on('updateCursor', function(position) {
-        socket.get('name', function(error, name) {
+        console.log("uopdate cursor recieved",position);
+        /*socket.get('name', function(error, name) {
             if (name)
                 socket.broadcast.emit('updateCursor', {
                     name:name,
                     position:position
                 });
-        });
+        });*/
     });
 
     socket.on('disconnect', function() {
-        socket.get('name', function(error, name) {
+        /*socket.get('name', function(error, name) {
             if (name) {
                 socket.broadcast.emit('receive', {
                     sender:'Server',
@@ -73,6 +73,11 @@ io.sockets.on('connection', function(socket) {
                 });
                 socket.broadcast.emit('removeCursor', name);
             }
-        })
+        })*/
+        socket.broadcast.emit('receive', {
+            sender:'Server',
+            message:name + ' has left.'
+        });
+        socket.broadcast.emit('removeCursor', name);
     });
 });
